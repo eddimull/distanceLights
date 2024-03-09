@@ -8,15 +8,15 @@
 #define ECHO_PIN 23
 #define SOUND_SPEED 0.034
 
-#define MIN_DISTANCE 4
-#define MAX_DISTANCE 70
+#define MIN_DISTANCE 5
+#define MAX_DISTANCE 64
 #define LED_GPIO GPIO_NUM_2
 
 #define WINDOW_SIZE 10 // Number of previous measurements to consider for smoothing
 
 static led_strip_handle_t led_strip;
 // distances to positions
-static const uint8_t slide_positions[] = {5, 11, 21, 29, 39, 50, 60};
+static const uint8_t slide_positions[] = {MIN_DISTANCE, 11, 21, 29, 39, 52, MAX_DISTANCE};
 
 // Function to calculate the moving average
 float calculateMovingAverage(float *values, int size, float newValue)
@@ -79,14 +79,14 @@ void calculateRGB(int distance, uint8_t *r, uint8_t *g, uint8_t *b)
     }
     else if (distance < slide_positions[2])
     {
-        *r = 255;
-        *g = map(distance, slide_positions[1], slide_positions[2], 0, 165);
+        *r = 245;
+        *g = 135;
         *b = 0;
     }
     else if (distance < slide_positions[3])
     {
         *r = 255;
-        *g = 255;
+        *g = 250;
         *b = 0;
     }
     else if (distance < slide_positions[4])
