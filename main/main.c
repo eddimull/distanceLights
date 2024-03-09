@@ -9,14 +9,15 @@
 #define SOUND_SPEED 0.034
 
 #define MIN_DISTANCE 4
-#define MAX_DISTANCE 50
+#define MAX_DISTANCE 70
 #define LED_GPIO GPIO_NUM_2
 
 #define WINDOW_SIZE 10 // Number of previous measurements to consider for smoothing
 
-static uint8_t s_led_state = 0;
-
 static led_strip_handle_t led_strip;
+// distances to positions
+static const uint8_t slide_positions[] = {5, 11, 21, 29, 39, 50, 60};
+
 // Function to calculate the moving average
 float calculateMovingAverage(float *values, int size, float newValue)
 {
@@ -48,9 +49,6 @@ static void configure_led(void)
     led_strip_clear(led_strip);
 }
 
-// Initialize the RGB values
-int r = 0, g = 0, b = 0;
-
 // Function to map a value from one range to another
 int map(int value, int fromLow, int fromHigh, int toLow, int toHigh)
 {
@@ -65,44 +63,55 @@ static void change_color(uint8_t red, uint8_t green, uint8_t blue)
 }
 
 // Function to calculate the RGB values based on distance and change the LED color
-void calculateRGB(int distance)
+void calculateRGB(int distance, uint8_t *r, uint8_t *g, uint8_t *b)
 {
-    if (distance < MIN_DISTANCE)
+    if (distance < slide_positions[0])
     {
-        distance = MIN_DISTANCE;
+        *r = 0;
+        *g = 0;
+        *b = 0;
     }
-    else if (distance > MAX_DISTANCE)
+    else if (distance < slide_positions[1])
     {
-        distance = MAX_DISTANCE;
+        *r = 255;
+        *g = 0;
+        *b = 0;
     }
-
-    int r, g, b;
-
-    if (distance <= MAX_DISTANCE / 3)
+    else if (distance < slide_positions[2])
     {
-        r = map(distance, MIN_DISTANCE, MAX_DISTANCE / 3, 255, 0);
-        g = map(distance, MIN_DISTANCE, MAX_DISTANCE / 3, 0, 255);
-        b = 0;
+        *r = 255;
+        *g = map(distance, slide_positions[1], slide_positions[2], 0, 165);
+        *b = 0;
     }
-    else if (distance <= MAX_DISTANCE * 2 / 3)
+    else if (distance < slide_positions[3])
     {
-        r = 0;
-        g = 255;
-        b = map(distance, MAX_DISTANCE / 3, MAX_DISTANCE * 2 / 3, 0, 255);
+        *r = 255;
+        *g = 255;
+        *b = 0;
+    }
+    else if (distance < slide_positions[4])
+    {
+        *r = 0;
+        *g = 255;
+        *b = 0;
+    }
+    else if (distance < slide_positions[5])
+    {
+        *r = 0;
+        *g = 0;
+        *b = 255;
     }
     else
     {
-        r = 0;
-        g = map(distance, MAX_DISTANCE * 2 / 3, MAX_DISTANCE, 255, 0);
-        b = 255;
+        *r = 238;
+        *g = 130;
+        *b = 238;
     }
-
-    change_color(r, g, b);
 }
 
 void app_main()
 {
-
+    uint8_t r, g, b;
     configure_led();
     gpio_set_direction(TRIG_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction(ECHO_PIN, GPIO_MODE_INPUT);
@@ -137,7 +146,8 @@ void app_main()
         printf("Raw Distance: %.2f cm\n", distance);
         printf("Smoothed Distance: %.2f cm\n", smoothedDistance);
 
-        calculateRGB(smoothedDistance);
+        calculateRGB(smoothedDistance, &r, &g, &b);
+        change_color(r, g, b);
 
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
